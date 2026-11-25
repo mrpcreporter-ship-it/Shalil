@@ -45,8 +45,14 @@ public class MainActivity extends AppCompatActivity {
         if(uri!=null){ try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){} pendingPhotoUri=uri.toString(); toast("تصویر انتخاب شد؛ با ذخیره کالا ثبت می‌شود"); }
     });
     private boolean scanForInvoice=false;
+    private TextInputEditText activeBarcodeField;
     private final ActivityResultLauncher<ScanOptions> scanner=registerForActivityResult(new ScanContract(), result -> {
-        if(result.getContents()!=null){ pendingBarcode=result.getContents(); if(scanForInvoice){ scanForInvoice=false; Cursor p=db().rawQuery("SELECT id FROM products WHERE code=? LIMIT 1",new String[]{pendingBarcode}); if(p.moveToFirst()){long id=p.getLong(0);cart.put(id,cart.getOrDefault(id,0)+1);p.close();invoice();}else{p.close();new AlertDialog.Builder(this).setMessage("No product has this barcode. Add it?").setPositiveButton("Add",(d,w)->productDialog(-1,"",pendingBarcode,0,0,0)).setNegativeButton("Cancel",null).show();}}else productDialog(-1,"",pendingBarcode,0,0,0); }
+        if(result.getContents()!=null){
+            pendingBarcode=result.getContents();
+            if(scanForInvoice){ scanForInvoice=false; Cursor p=db().rawQuery("SELECT id FROM products WHERE code=? LIMIT 1",new String[]{pendingBarcode}); if(p.moveToFirst()){long id=p.getLong(0);cart.put(id,cart.getOrDefault(id,0)+1);p.close();invoice();}else{p.close();new AlertDialog.Builder(this).setMessage("No product has this barcode. Add it?").setPositiveButton("Add",(d,w)->productDialog(-1,"",pendingBarcode,0,0,0)).setNegativeButton("Cancel",null).show();}}
+            else if(activeBarcodeField!=null){activeBarcodeField.setText(pendingBarcode);activeBarcodeField.setSelection(activeBarcodeField.getText().length());activeBarcodeField=null;}
+            else productDialog(-1,"",pendingBarcode,0,0,0);
+        } else { activeBarcodeField=null; }
     });
     private final ActivityResultLauncher<String> exportPicker=registerForActivityResult(new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> { if(uri!=null) backupTo(uri); });
     private final ActivityResultLauncher<String[]> importPicker=registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> { if(uri!=null) restoreFrom(uri); });
@@ -112,16 +118,50 @@ public class MainActivity extends AppCompatActivity {
         search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence s,int st,int before,int count){load.run();}public void afterTextChanged(android.text.Editable e){}});
         load.run();
     }
+    private LinearLayout labeledRow(String caption, View input, int inputWeight){
+        LinearLayout row=new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title=label(caption,14);
+        title.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        title.setMinWidth(dp(92));
+        row.addView(title,new LinearLayout.LayoutParams(dp(104),-2));
+        row.addView(input,new LinearLayout.LayoutParams(0,-2,inputWeight));
+        LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
+        rp.setMargins(0,dp(4),0,dp(4));
+        return row;
+    }
+    private int dp(int value){return (int)(value*getResources().getDisplayMetrics().density+0.5f);}
     private void productDialog(long id,String name,String code,int stock,long buy,long price){
         pendingPhotoUri="";
-        LinearLayout f=new LinearLayout(this);f.setPadding(20,8,20,8);f.setOrientation(1);
-        TextInputEditText n=field("نام کالا",name,InputType.TYPE_CLASS_TEXT),bc=field("بارکد",code,InputType.TYPE_CLASS_TEXT),
-        st=field("موجودی",String.valueOf(stock),InputType.TYPE_CLASS_NUMBER),bp=field("قیمت خرید (ریال)",String.valueOf(buy),InputType.TYPE_CLASS_NUMBER),
-        sp=field("قیمت فروش (ریال)",String.valueOf(price),InputType.TYPE_CLASS_NUMBER);
-        f.addView(n);f.addView(bc);f.addView(st);f.addView(bp);f.addView(sp);
+        LinearLayout f=new LinearLayout(this);f.setPadding(dp(16),dp(8),dp(16),dp(8));f.setOrientation(LinearLayout.VERTICAL);
+        f.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        TextInputEditText n=field("",name,InputType.TYPE_CLASS_TEXT);
+        TextInputEditText bc=field("",code,InputType.TYPE_CLASS_TEXT);
+        TextInputEditText st=field("",String.valueOf(stock),InputType.TYPE_CLASS_NUMBER);
+        TextInputEditText bp=field("",String.valueOf(buy),InputType.TYPE_CLASS_NUMBER);
+        TextInputEditText sp=field("",String.valueOf(price),InputType.TYPE_CLASS_NUMBER);
+        n.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);bc.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        st.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);bp.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);sp.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        f.addView(labeledRow("نام محصول",n,1));
+        LinearLayout barcodeRow=new LinearLayout(this);
+        barcodeRow.setOrientation(LinearLayout.HORIZONTAL);barcodeRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        barcodeRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView barcodeLabel=label("بارکد",14);barcodeLabel.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        barcodeRow.addView(barcodeLabel,new LinearLayout.LayoutParams(dp(104),-2));
+        MaterialButton scan=button("▣",()->{activeBarcodeField=bc;ScanOptions o=new ScanOptions();o.setPrompt("بارکد را روبه‌روی دوربین بگیرید");o.setBeepEnabled(false);o.setOrientationLocked(true);scanner.launch(o);});
+        scan.setContentDescription("اسکن بارکد با دوربین");scan.setMinWidth(dp(48));
+        barcodeRow.addView(scan,new LinearLayout.LayoutParams(dp(52),dp(48)));
+        barcodeRow.addView(bc,new LinearLayout.LayoutParams(0,-2,1));
+        LinearLayout.LayoutParams brp=new LinearLayout.LayoutParams(-1,-2);brp.setMargins(0,dp(4),0,dp(4));f.addView(barcodeRow,brp);
+        f.addView(labeledRow("موجودی",st,1));
+        f.addView(labeledRow("قیمت محصول (خرید)",bp,1));
+        f.addView(labeledRow("قیمت فروش",sp,1));
         MaterialButton photo=button("🖼 انتخاب تصویر کالا (اختیاری)",()->photoPicker.launch(new String[]{"image/*"}));f.addView(photo);
-        new AlertDialog.Builder(this).setTitle(id<0?"افزودن کالا":"ویرایش کالا").setView(f).setNegativeButton("لغو",null).setPositiveButton("ذخیره",(d,w)->{
-            if(n.getText()==null||n.getText().toString().trim().isEmpty()){toast("نام کالا الزامی است");return;}
+        new AlertDialog.Builder(this).setTitle(id<0?"افزودن کالا":"ویرایش کالا").setView(f).setNegativeButton("لغو",(d,w)->activeBarcodeField=null).setPositiveButton("ذخیره",(d,w)->{
+            activeBarcodeField=null;
+            if(n.getText()==null||n.getText().toString().trim().isEmpty()){toast("نام محصول الزامی است");return;}
             ContentValues v=new ContentValues();v.put("name",n.getText().toString().trim());v.put("code",bc.getText().toString());v.put("stock",num(st));v.put("buy",num(bp));v.put("price",num(sp));if(!pendingPhotoUri.isEmpty())v.put("photo",pendingPhotoUri);
             if(id<0)db().insert("products",null,v);else db().update("products",v,"id=?",new String[]{""+id});products();
         }).show();
