@@ -184,11 +184,11 @@ public class MainActivity extends AppCompatActivity {
         card("ذخیره‌سازی","اطلاعات فروشگاه روی همین دستگاه و بدون نیاز به اینترنت نگهداری می‌شود.",null);
     }
     private void backupTo(Uri uri){
-        try{helper.close();try(InputStream in=new FileInputStream(getDatabasePath("shalil.db"));OutputStream out=getContentResolver().openOutputStream(uri)){byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,n);}helper=new StoreDb();toast("فایل پشتیبان ذخیره شد");}
+        try{helper.close();try(InputStream in=new FileInputStream(getDatabasePath("shalil.db"));OutputStream out=getContentResolver().openOutputStream(uri)){byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,0,n);}helper=new StoreDb();toast("فایل پشتیبان ذخیره شد");}
         catch(Exception e){helper=new StoreDb();toast("خطا در پشتیبان‌گیری: "+e.getMessage());}
     }
     private void restoreFrom(Uri uri){
-        try{helper.close();File target=getDatabasePath("shalil.db");try(InputStream in=getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(target)){byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,n);}helper=new StoreDb();dashboard();toast("پشتیبان بازیابی شد");}
+        try{helper.close();File target=getDatabasePath("shalil.db");try(InputStream in=getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(target)){byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,0,n);}helper=new StoreDb();dashboard();toast("پشتیبان بازیابی شد");}
         catch(Exception e){helper=new StoreDb();toast("فایل پشتیبان معتبر نیست: "+e.getMessage());}
     }
     private void choosePrinter(){
