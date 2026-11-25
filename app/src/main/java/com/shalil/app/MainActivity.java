@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
         }).show();
     }
     private void scanBarcode(){
-        ScanOptions o=new ScanOptions();o.setPrompt("بارکد کالا را روبه‌روی دوربین بگیرید");o.setBeepEnabled(false);o.setOrientationLocked(false);scanner.launch(o);
+        ScanOptions o=new ScanOptions();o.setPrompt("بارکد کالا را روبه‌روی دوربین بگیرید");o.setBeepEnabled(false);o.setOrientationLocked(true);scanner.launch(o);
     }
     private void invoice(){
         heading("فاکتور فروش جدید");
