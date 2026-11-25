@@ -40,6 +40,10 @@ public class MainActivity extends AppCompatActivity {
     private boolean toman=false;
     private int paperWidth=58;
     private String pendingBarcode="";
+    private String pendingPhotoUri="";
+    private final ActivityResultLauncher<String[]> photoPicker=registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+        if(uri!=null){ try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){} pendingPhotoUri=uri.toString(); toast("تصویر انتخاب شد؛ با ذخیره کالا ثبت می‌شود"); }
+    });
     private boolean scanForInvoice=false;
     private final ActivityResultLauncher<ScanOptions> scanner=registerForActivityResult(new ScanContract(), result -> {
         if(result.getContents()!=null){ pendingBarcode=result.getContents(); if(scanForInvoice){ scanForInvoice=false; Cursor p=db().rawQuery("SELECT id FROM products WHERE code=? LIMIT 1",new String[]{pendingBarcode}); if(p.moveToFirst()){long id=p.getLong(0);cart.put(id,cart.getOrDefault(id,0)+1);p.close();invoice();}else{p.close();new AlertDialog.Builder(this).setMessage("No product has this barcode. Add it?").setPositiveButton("Add",(d,w)->productDialog(-1,"",pendingBarcode,0,0,0)).setNegativeButton("Cancel",null).show();}}else productDialog(-1,"",pendingBarcode,0,0,0); }
@@ -60,12 +64,16 @@ public class MainActivity extends AppCompatActivity {
         dashboard();
     }
     private TextView label(String s,int size){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(getColor(R.color.ink));t.setPadding(3,6,3,6);return t;}
-    private void heading(String s){content.removeAllViews();TextView h=label(s,23);h.setTypeface(null,1);content.addView(h);}
+    private void heading(String s){
+        content.animate().cancel();content.setAlpha(0f);content.setTranslationY(14f);content.removeAllViews();
+        TextView h=label(s,23);h.setTypeface(null,1);content.addView(h);
+        content.animate().alpha(1f).translationY(0f).setDuration(240).start();
+    }
     private MaterialButton button(String s,Runnable r){MaterialButton b=new MaterialButton(this);b.setText(s);b.setOnClickListener(v->r.run());return b;}
     private void card(String title,String detail,Runnable click){
-        MaterialCardView c=new MaterialCardView(this);c.setRadius(18);c.setCardElevation(2);c.setCardBackgroundColor(getColor(R.color.surface));
+        MaterialCardView c=new MaterialCardView(this);c.setRadius(22);c.setCardElevation(3);c.setStrokeWidth(1);c.setStrokeColor(getColor(R.color.teal_light));c.setCardBackgroundColor(getColor(R.color.surface));
         LinearLayout box=new LinearLayout(this);box.setOrientation(1);box.setPadding(16,12,16,12);box.addView(label(title,17));box.addView(label(detail,14));c.addView(box);
-        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,5,0,8);content.addView(c,p);if(click!=null)c.setOnClickListener(v->click.run());
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,7,0,9);content.addView(c,p);c.setAlpha(0f);c.setTranslationY(10f);c.animate().alpha(1f).translationY(0f).setDuration(260).start();if(click!=null)c.setOnClickListener(v->click.run());
     }
     private String money(long n){return NumberFormat.getInstance(new Locale("fa","IR")).format(toman?n/10:n)+(toman?" تومان":" ریال");}
     private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
@@ -88,11 +96,11 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout results=new LinearLayout(this);results.setOrientation(1);content.addView(results);
         Runnable load=()->{
             results.removeAllViews();String q=search.getText()==null?"":search.getText().toString();
-            Cursor c=db().rawQuery("SELECT id,name,code,stock,buy,price FROM products WHERE name LIKE ? OR code LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});
+            Cursor c=db().rawQuery("SELECT id,name,code,stock,buy,price,photo FROM products WHERE name LIKE ? OR code LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});
             while(c.moveToNext()){
-                long id=c.getLong(0),buy=c.getLong(4),price=c.getLong(5);String n=c.getString(1),code=c.getString(2);int stock=c.getInt(3);
+                long id=c.getLong(0),buy=c.getLong(4),price=c.getLong(5);String n=c.getString(1),code=c.getString(2),photo=c.getString(6);int stock=c.getInt(3);
                 MaterialCardView card=new MaterialCardView(this);card.setRadius(14);LinearLayout box=new LinearLayout(this);box.setPadding(12,8,12,8);box.setOrientation(1);
-                box.addView(label(n,17));box.addView(label("بارکد: "+(code==null?"—":code)+" | موجودی: "+stock,13));
+                if(photo!=null&&!photo.isEmpty()){try{ImageView thumb=new ImageView(this);thumb.setImageURI(Uri.parse(photo));thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(92,92);ip.gravity=Gravity.CENTER_HORIZONTAL;box.addView(thumb,ip);}catch(Exception ignored){}}\n                box.addView(label("🍑  "+n,17));box.addView(label("بارکد: "+(code==null?"—":code)+" | موجودی: "+stock,13));
                 box.addView(label("خرید: "+money(buy)+" | فروش: "+money(price),13));
                 LinearLayout actions=new LinearLayout(this);
                 actions.addView(button("ویرایش",()->productDialog(id,n,code==null?"":code,stock,buy,price)),new LinearLayout.LayoutParams(0,-2,1));
@@ -104,14 +112,14 @@ public class MainActivity extends AppCompatActivity {
         load.run();
     }
     private void productDialog(long id,String name,String code,int stock,long buy,long price){
-        LinearLayout f=new LinearLayout(this);f.setPadding(20,8,20,8);f.setOrientation(1);
+        pendingPhotoUri="";\n        LinearLayout f=new LinearLayout(this);f.setPadding(20,8,20,8);f.setOrientation(1);
         TextInputEditText n=field("نام کالا",name,InputType.TYPE_CLASS_TEXT),bc=field("بارکد",code,InputType.TYPE_CLASS_TEXT),
         st=field("موجودی",String.valueOf(stock),InputType.TYPE_CLASS_NUMBER),bp=field("قیمت خرید (ریال)",String.valueOf(buy),InputType.TYPE_CLASS_NUMBER),
         sp=field("قیمت فروش (ریال)",String.valueOf(price),InputType.TYPE_CLASS_NUMBER);
-        f.addView(n);f.addView(bc);f.addView(st);f.addView(bp);f.addView(sp);
+        f.addView(n);f.addView(bc);f.addView(st);f.addView(bp);f.addView(sp);\n        MaterialButton photo=button("🖼 انتخاب تصویر کالا (اختیاری)",()->photoPicker.launch(new String[]{"image/*"}));f.addView(photo);
         new AlertDialog.Builder(this).setTitle(id<0?"افزودن کالا":"ویرایش کالا").setView(f).setNegativeButton("لغو",null).setPositiveButton("ذخیره",(d,w)->{
             if(n.getText()==null||n.getText().toString().trim().isEmpty()){toast("نام کالا الزامی است");return;}
-            ContentValues v=new ContentValues();v.put("name",n.getText().toString().trim());v.put("code",bc.getText().toString());v.put("stock",num(st));v.put("buy",num(bp));v.put("price",num(sp));
+            ContentValues v=new ContentValues();v.put("name",n.getText().toString().trim());v.put("code",bc.getText().toString());v.put("stock",num(st));v.put("buy",num(bp));v.put("price",num(sp));if(!pendingPhotoUri.isEmpty())v.put("photo",pendingPhotoUri);
             if(id<0)db().insert("products",null,v);else db().update("products",v,"id=?",new String[]{""+id});products();
         }).show();
     }
@@ -223,12 +231,12 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){super.onActivityResult(requestCode,resultCode,data);}
     private class StoreDb extends SQLiteOpenHelper{
-        StoreDb(){super(MainActivity.this,"shalil.db",null,1);}
+        StoreDb(){super(MainActivity.this,"shalil.db",null,2);}
         public void onCreate(SQLiteDatabase d){
-            d.execSQL("CREATE TABLE products(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,code TEXT,stock INTEGER NOT NULL,buy INTEGER NOT NULL,price INTEGER NOT NULL)");
+            d.execSQL("CREATE TABLE products(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,code TEXT,stock INTEGER NOT NULL,buy INTEGER NOT NULL,price INTEGER NOT NULL,photo TEXT)");
             d.execSQL("CREATE TABLE sales(id INTEGER PRIMARY KEY AUTOINCREMENT,total INTEGER NOT NULL,created INTEGER NOT NULL)");
             d.execSQL("CREATE TABLE sale_lines(id INTEGER PRIMARY KEY AUTOINCREMENT,sale_id INTEGER,product_id INTEGER,qty INTEGER,price INTEGER)");
         }
-        public void onUpgrade(SQLiteDatabase d,int oldV,int newV){}
+        public void onUpgrade(SQLiteDatabase d,int oldV,int newV){if(oldV<2)d.execSQL("ALTER TABLE products ADD COLUMN photo TEXT");}
     }
 }
