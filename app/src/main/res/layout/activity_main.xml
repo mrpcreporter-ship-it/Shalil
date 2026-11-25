@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/page_bg"
+    android:layoutDirection="rtl">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingStart="20dp" android:paddingEnd="20dp"
+        android:paddingTop="18dp" android:paddingBottom="14dp" android:background="@color/teal_dark">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Shalil  •  شلیل" android:textColor="@android:color/white"
+            android:textStyle="bold" android:textSize="23sp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="مدیریت فروشگاه، ساده و آفلاین" android:textColor="#D9F3EF" android:textSize="13sp"/>
+    </LinearLayout>
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:fillViewport="true">
+        <LinearLayout android:id="@+id/content_area" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical"
+            android:padding="16dp"/>
+    </ScrollView>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:background="@color/surface" android:elevation="8dp"
+        android:paddingTop="5dp" android:paddingBottom="5dp">
+        <com.google.android.material.button.MaterialButton android:id="@+id/nav_home"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:text="خانه"
+            android:textSize="11sp" android:minWidth="0dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/nav_products"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:text="کالاها"
+            android:textSize="11sp" android:minWidth="0dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/nav_invoice"
+            style="@style/Widget.Material3.Button" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:text="فاکتور جدید"
+            android:textSize="10sp" android:minWidth="0dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/nav_reports"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:text="گزارش"
+            android:textSize="11sp" android:minWidth="0dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/nav_settings"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:text="تنظیمات"
+            android:textSize="10sp" android:minWidth="0dp"/>
+    </LinearLayout>
+</LinearLayout>
