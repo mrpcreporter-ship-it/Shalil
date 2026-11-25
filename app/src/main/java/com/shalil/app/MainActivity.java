@@ -100,7 +100,8 @@ public class MainActivity extends AppCompatActivity {
             while(c.moveToNext()){
                 long id=c.getLong(0),buy=c.getLong(4),price=c.getLong(5);String n=c.getString(1),code=c.getString(2),photo=c.getString(6);int stock=c.getInt(3);
                 MaterialCardView card=new MaterialCardView(this);card.setRadius(14);LinearLayout box=new LinearLayout(this);box.setPadding(12,8,12,8);box.setOrientation(1);
-                if(photo!=null&&!photo.isEmpty()){try{ImageView thumb=new ImageView(this);thumb.setImageURI(Uri.parse(photo));thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(92,92);ip.gravity=Gravity.CENTER_HORIZONTAL;box.addView(thumb,ip);}catch(Exception ignored){}}\n                box.addView(label("🍑  "+n,17));box.addView(label("بارکد: "+(code==null?"—":code)+" | موجودی: "+stock,13));
+                if(photo!=null&&!photo.isEmpty()){try{ImageView thumb=new ImageView(this);thumb.setImageURI(Uri.parse(photo));thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(92,92);ip.gravity=Gravity.CENTER_HORIZONTAL;box.addView(thumb,ip);}catch(Exception ignored){}}
+                box.addView(label("🍑  "+n,17));box.addView(label("بارکد: "+(code==null?"—":code)+" | موجودی: "+stock,13));
                 box.addView(label("خرید: "+money(buy)+" | فروش: "+money(price),13));
                 LinearLayout actions=new LinearLayout(this);
                 actions.addView(button("ویرایش",()->productDialog(id,n,code==null?"":code,stock,buy,price)),new LinearLayout.LayoutParams(0,-2,1));
@@ -112,11 +113,13 @@ public class MainActivity extends AppCompatActivity {
         load.run();
     }
     private void productDialog(long id,String name,String code,int stock,long buy,long price){
-        pendingPhotoUri="";\n        LinearLayout f=new LinearLayout(this);f.setPadding(20,8,20,8);f.setOrientation(1);
+        pendingPhotoUri="";
+        LinearLayout f=new LinearLayout(this);f.setPadding(20,8,20,8);f.setOrientation(1);
         TextInputEditText n=field("نام کالا",name,InputType.TYPE_CLASS_TEXT),bc=field("بارکد",code,InputType.TYPE_CLASS_TEXT),
         st=field("موجودی",String.valueOf(stock),InputType.TYPE_CLASS_NUMBER),bp=field("قیمت خرید (ریال)",String.valueOf(buy),InputType.TYPE_CLASS_NUMBER),
         sp=field("قیمت فروش (ریال)",String.valueOf(price),InputType.TYPE_CLASS_NUMBER);
-        f.addView(n);f.addView(bc);f.addView(st);f.addView(bp);f.addView(sp);\n        MaterialButton photo=button("🖼 انتخاب تصویر کالا (اختیاری)",()->photoPicker.launch(new String[]{"image/*"}));f.addView(photo);
+        f.addView(n);f.addView(bc);f.addView(st);f.addView(bp);f.addView(sp);
+        MaterialButton photo=button("🖼 انتخاب تصویر کالا (اختیاری)",()->photoPicker.launch(new String[]{"image/*"}));f.addView(photo);
         new AlertDialog.Builder(this).setTitle(id<0?"افزودن کالا":"ویرایش کالا").setView(f).setNegativeButton("لغو",null).setPositiveButton("ذخیره",(d,w)->{
             if(n.getText()==null||n.getText().toString().trim().isEmpty()){toast("نام کالا الزامی است");return;}
             ContentValues v=new ContentValues();v.put("name",n.getText().toString().trim());v.put("code",bc.getText().toString());v.put("stock",num(st));v.put("buy",num(bp));v.put("price",num(sp));if(!pendingPhotoUri.isEmpty())v.put("photo",pendingPhotoUri);
