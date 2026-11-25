@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
  <color name="teal_dark">#075E59</color><color name="teal">#0F8B83</color>
- <color name="teal_light">#B9E4DE</color><color name="page_bg">#F1F7F6</color>
+ <color name="teal_light">#B9E4DE</color><color name="page_bg">#F4F8F7</color>
  <color name="surface">#FFFFFF</color><color name="ink">#183331</color>
+ <color name="peach">#FFB28E</color><color name="peach_light">#FFE0D0</color>
 </resources>
