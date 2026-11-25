@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         }
         c.close();
     }
-    private void productDialog(){ productDialog(-1,"","","",0,0,0); }
+    private void productDialog(){ productDialog(-1,"","",0,0,0); }
     private void productDialog(long id,String name,String code,int stock,long buy,long price) {
         LinearLayout form=new LinearLayout(this); form.setPadding(20,8,20,8); form.setOrientation(LinearLayout.VERTICAL);
         TextInputEditText n=field("نام کالا",name,InputType.TYPE_CLASS_TEXT);
