@@ -40,8 +40,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean toman=false;
     private int paperWidth=58;
     private String pendingBarcode="";
+    private boolean scanForInvoice=false;
     private final ActivityResultLauncher<ScanOptions> scanner=registerForActivityResult(new ScanContract(), result -> {
-        if(result.getContents()!=null){ pendingBarcode=result.getContents(); productDialog(-1,"",pendingBarcode,0,0,0); }
+        if(result.getContents()!=null){ pendingBarcode=result.getContents(); if(scanForInvoice){ scanForInvoice=false; Cursor p=db().rawQuery("SELECT id FROM products WHERE code=? LIMIT 1",new String[]{pendingBarcode}); if(p.moveToFirst()){long id=p.getLong(0);cart.put(id,cart.getOrDefault(id,0)+1);p.close();invoice();}else{p.close();new AlertDialog.Builder(this).setMessage("No product has this barcode. Add it?").setPositiveButton("Add",(d,w)->productDialog(-1,"",pendingBarcode,0,0,0)).setNegativeButton("Cancel",null).show();}}else productDialog(-1,"",pendingBarcode,0,0,0); }
     });
     private final ActivityResultLauncher<String> exportPicker=registerForActivityResult(new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> { if(uri!=null) backupTo(uri); });
     private final ActivityResultLauncher<String[]> importPicker=registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> { if(uri!=null) restoreFrom(uri); });
@@ -121,8 +122,7 @@ public class MainActivity extends AppCompatActivity {
         heading("فاکتور فروش جدید");
         content.addView(button("اسکن بارکد",()->{
             ScanOptions o=new ScanOptions();o.setPrompt("بارکد محصول را اسکن کنید");o.setBeepEnabled(false);
-            scanner.unregister(); // scanner result creates a product if scanned from this screen
-            scanner.launch(o);
+            scanForInvoice=true; scanner.launch(o);
         }));
         Cursor c=db().rawQuery("SELECT id,name,stock,price FROM products WHERE stock>0 ORDER BY name",null);
         while(c.moveToNext()){
@@ -162,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
         long now=System.currentTimeMillis(),day=86400000L;
         reportRange("امروز",now-day);reportRange("۷ روز اخیر",now-7*day);reportRange("۳۰ روز اخیر",now-30*day);
         Cursor c=db().rawQuery("SELECT id,total,created FROM sales ORDER BY created DESC",null);
-        while(c.moveToNext()){String dt=new SimpleDateFormat("yyyy/MM/dd HH:mm",Locale.getDefault()).format(new Date(c.getLong(2)));card("فاکتور "+c.getLong(0),dt+" | "+money(c.getLong(1)),()->showSale(c.getLong(0)));}
+        while(c.moveToNext()){final long saleId=c.getLong(0);String dt=new SimpleDateFormat("yyyy/MM/dd HH:mm",Locale.getDefault()).format(new Date(c.getLong(2)));card("فاکتور "+saleId,dt+" | "+money(c.getLong(1)),()->showSale(saleId));}
         c.close();
     }
     private void reportRange(String title,long from){
